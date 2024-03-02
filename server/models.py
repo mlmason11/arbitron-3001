@@ -75,6 +75,7 @@ class Team(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	league_id = db.Column(db.String, db.ForeignKey('leagues.id'))
+	league_name = db.Column(db.String)
 	name = db.Column(db.String)
 	city = db.Column(db.String)
 
