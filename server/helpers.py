@@ -177,26 +177,19 @@ def create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_nam
 	return arbitrage_opportunity_list
 
 # Automates the addition of any arbitrage opportunities to our database
-def add_arbitrages(arb_list, game_list, team_names_dict):
+def add_arbitrages(arb_list, team_names_dict):
 	if len(arb_list) > 0:
 		for arb in arb_list:
-			# exists = ArbitrageOpportunity.query.filter_by(
-			# 	game_date=arb['game_date'],
-			# 	team_1_id=arb['team_1_id'],
-			# 	team_2_id=arb['team_2_id'],
-			# 	bookie_1_id=arb['bookie_1_id'],
-			# 	bookie_2_id=arb['bookie_2_id'],
-			# 	league_id=arb['league_id']
-			# ).first()
-
-			if not ArbitrageOpportunity.query.filter_by(
+			exists = ArbitrageOpportunity.query.filter_by(
 				game_date=arb['game_date'],
 				team_1_id=arb['team_1_id'],
 				team_2_id=arb['team_2_id'],
 				bookie_1_id=arb['bookie_1_id'],
 				bookie_2_id=arb['bookie_2_id'],
 				league_id=arb['league_id']
-			).first():
+			).first()
+
+			if not exists:
 				league = League.query.filter_by(name=arb['league_name']).first()
 				if not league:
 					league = League(name=arb['league_name'])
@@ -256,4 +249,5 @@ def add_arbitrages(arb_list, game_list, team_names_dict):
 				db.session.add(opportunity)
 		db.session.commit()
 
-def add_ncaab_arbitrages
+def add_ncaab_arbitrages(arb_list, team_names_dict):
+	pass
