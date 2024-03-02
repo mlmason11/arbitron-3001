@@ -40,7 +40,7 @@ def nba():
 
 	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
 	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='nba')
-	add_arbitrages(arbitrage_opportunity_list, game_dict_list, NBA_TEAMS)
+	add_arbitrages(arbitrage_opportunity_list, NBA_TEAMS)
 
 	# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notifiy the user of this.
 	if len(arbitrage_opportunity_list) > 0:
@@ -65,7 +65,7 @@ def nhl():
 
 	game_dict_list= create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
 	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='nhl')
-	add_arbitrages(arbitrage_opportunity_list, game_dict_list, NHL_TEAMS)
+	add_arbitrages(arbitrage_opportunity_list, NHL_TEAMS)
 
 	# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notifiy the user of this.
 	if len(arbitrage_opportunity_list) > 0:
@@ -90,7 +90,7 @@ def ncaab():
 
 	game_dict_list= create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
 	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='ncaab')
-	add_arbitrages(arb_list=arbitrage_opportunity_list, game_list=game_dict_list, team_names_dict={})
+	add_arbitrages(arb_list=arbitrage_opportunity_list, team_names_dict={})
 
 	# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notifiy the user of this.
 	if len(arbitrage_opportunity_list) > 0:
@@ -115,7 +115,7 @@ def mlb():
 
 	game_dict_list= create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
 	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='mlb')
-	add_arbitrages(arb_list=arbitrage_opportunity_list, game_list=game_dict_list, team_names_dict=MLB_TEAMS)
+	add_arbitrages(arb_list=arbitrage_opportunity_list, team_names_dict=MLB_TEAMS)
 
 	# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notifiy the user of this.
 	if len(arbitrage_opportunity_list) > 0:

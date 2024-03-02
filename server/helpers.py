@@ -180,53 +180,55 @@ def create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_nam
 def add_arbitrages(arb_list, team_names_dict):
 	if len(arb_list) > 0:
 		for arb in arb_list:
+			league = League.query.filter_by(name=arb['league_name']).first()
+			if not league:
+				league = League(name=arb['league_name'])
+				db.session.add(league)
+
+			bookie_1 = Bookie.query.filter_by(name=arb['bookie_1']).first()
+			if not bookie_1:
+				bookie_1 = Bookie(name=arb['bookie_1'])
+				db.session.add(bookie_1)
+
+			bookie_2 = Bookie.query.filter_by(name=arb['bookie_2']).first()
+			if not bookie_2:
+				bookie_2 = Bookie(name=arb['bookie_2'])
+				db.session.add(bookie_2)
+
+			team_1 = Team.query.filter_by(name=(arb['team_1'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_1']])).first()
+			if not team_1:
+				team_1 = Team(
+					league_id=league.id,
+					league_name=arb['league_name'],
+					name=arb['team_1'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_1']],
+					city=arb['team_1']
+				)
+				db.session.add(team_1)
+
+			team_2 = Team.query.filter_by(name=(arb['team_2'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_2']])).first()
+			if not team_2:
+				team_2 = Team(
+					league_id=league.id,
+					league_name=arb['league_name'],
+					name=arb['team_2'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_2']],
+					city=arb['team_2']
+				)
+				db.session.add(team_2)
+
+			db.session.flush()
+
 			exists = ArbitrageOpportunity.query.filter_by(
 				game_date=arb['game_date'],
-				team_1_id=arb['team_1_id'],
-				team_2_id=arb['team_2_id'],
-				bookie_1_id=arb['bookie_1_id'],
-				bookie_2_id=arb['bookie_2_id'],
-				league_id=arb['league_id']
+				moneyline_1=arb['moneyline_1'],
+				moneyline_2=arb['moneyline_2'],
+				team_1_id=team_1.id,
+				team_2_id=team_2.id,
+				bookie_1_id=bookie_1.id,
+				bookie_2_id=bookie_2.id,
+				league_id=league.id
 			).first()
 
 			if not exists:
-				league = League.query.filter_by(name=arb['league_name']).first()
-				if not league:
-					league = League(name=arb['league_name'])
-					db.session.add(league)
-
-				bookie_1 = Bookie.query.filter_by(name=arb['bookie_1']).first()
-				if not bookie_1:
-					bookie_1 = Bookie(name=arb['bookie_1'])
-					db.session.add(bookie_1)
-
-				bookie_2 = Bookie.query.filter_by(name=arb['bookie_2']).first()
-				if not bookie_2:
-					bookie_2 = Bookie(name=arb['bookie_2'])
-					db.session.add(bookie_2)
-
-				team_1 = Team.query.filter_by(name=arb['team_1'].first() if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_1']].first())
-				if not team_1:
-					team_1 = Team(
-						league_id=league.id,
-						league_name=arb['league_name'],
-						name=arb['team_1'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_1']],
-						city=arb['team_1']
-					)
-					db.session.add(team_1)
-
-				team_2 = Team.query.filter_by(name=arb['team_2'].first() if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_2']].first())
-				if not team_2:
-					team_2 = Team(
-						league_id=league.id,
-						league_name=arb['league_name'],
-						name=arb['team_2'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_2']],
-						city=arb['team_2']
-					)
-					db.session.add(team_2)
-
-				db.session.flush()
-
 				opportunity = ArbitrageOpportunity(
 					bookie_1_id=bookie_1.id,
 					bookie_2_id=bookie_2.id,
