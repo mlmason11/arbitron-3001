@@ -125,8 +125,7 @@ def clean_ncaab_team_name(s):
     # followed by one or more digits (\d+),
     # followed by a closing parenthesis,
     # and optionally followed by whitespace characters (\s*).
-    cleaned_name = re.sub(r'^\(\d+\)\s*', '', s)
-    return cleaned_name
+    return re.sub(r'^\(\d+\)\s*', '', s)
 
 # Calculates the odds in whole number + decimal form from the +/- moneyline form odds
 # Takes in a string, returns a float
@@ -137,9 +136,9 @@ def odds_from_moneyline(moneyline):
 		elif moneyline[0] == '-':
 			return (100 / int(moneyline[1:])) + 1
 		else:
-			return 'moneyline must be an integer that is either positive or negative'
+			return '-'
 	else:
-		return 'moneyline odds are not available for this matchup'
+		return '-'
 
 # Efficiently organize all information about each game in a list of dictionaries
 def create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list):

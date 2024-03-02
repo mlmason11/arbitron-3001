@@ -18,8 +18,6 @@ db.init_app(app)
 
 CORS(app)
 
-
-
 @app.route('/')
 def index():
 	return '<h1>Hello World!</h1>'
@@ -123,8 +121,6 @@ def mlb():
 	else:
 		# return make_response(jsonify({'error': 'no arbitrage opportunities can be found at this time'}), 200)
 		return make_response(jsonify(game_dict_list))
-
-
 
 
 @app.get('/arbitrage_opportunities')
