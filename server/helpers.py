@@ -3,6 +3,20 @@ from datetime import datetime
 from time import localtime
 from models import db, ArbitrageOpportunity, Team, League, Bookie
 
+# Date located in <p> tag with class name OddsTable_timeText__lFfv_
+# Minus odds indicate a favorite, while plus odds indicate an underdog.
+# For instance, if oddsmakers heavily favor the Phoenix Suns in a game against the Indiana Pacers, the Suns might have odds of -250. In this case, you would have to wager $250 on Phoenix to win $100.
+# If oddsmakers list the Pacers as +300 underdogs, you stand to win $300 with a $100 wager.
+# If the moneyline is positive, it is divided by 100 and add 1. Thus, +400 moneyline = 5.0 in decimal odds. If the moneyline is negative, 100 is divided by the absolute moneyline amount (the minus signed is removed), and then 1 is added. For example, −400 moneyline is 100/400 + 1, or 1.25, in decimal odds.
+
+# Get the first two <spans> of class GameRows_participantBox__0WCRz. Extract the text. These are the teams that are playing.
+# We will be working with the following 7 <divs> of class OddsCells_numbersContainer__6V_XO
+# Within each of these <divs> we want to find the two <spans> of both classes OddsCells_pointer___xLMm && OddsCells_margin__7d2oM
+# The text of the second child <span> (after the <span> of class OddsCells_adjust__hGhKV) of each of these parent <spans> will contain our odds. Extract this information.
+# The first number we extract will correspond to the first team we extracted earler, and the second number we extract will correspond to the second team. Organize the data as such.
+# Repeat this for each of the following 6 <divs> of class OddsCells_numbersContainer__6V_XO
+# Then, repeat the entire process for the rest of the <spans> of class GameRows_participantBox__0WCRz, two at a time. It is very important that we work with the <spans> of class GameRows_participantBox__0WCRz two at a time to ensure there is no jumbling of teams and games.
+
 # Matches all NBA team names to their cities
 NBA_TEAMS = {
 	"Atlanta": "Hawks",
