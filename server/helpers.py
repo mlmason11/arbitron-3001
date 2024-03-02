@@ -250,6 +250,3 @@ def add_arbitrages(arb_list, team_names_dict):
 				)
 				db.session.add(opportunity)
 		db.session.commit()
-
-def add_ncaab_arbitrages(arb_list, team_names_dict):
-	pass
