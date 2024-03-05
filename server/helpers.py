@@ -1,7 +1,10 @@
 import re
+import numpy as np
+
+from app import session
 from datetime import datetime
 from time import localtime
-from models import db, ArbitrageOpportunity, Team, League, Bookie
+from models import db, ArbitrageOpportunity, Team, League, Bookie, User
 
 # Date located in <p> tag with class name OddsTable_timeText__lFfv_
 # Minus odds indicate a favorite, while plus odds indicate an underdog.
@@ -119,6 +122,13 @@ MLB_TEAMS = {
     'WAS': 'Nationals'
 }
 
+def logged_in_user():
+    return User.query.filter(User.id == session.get('user_id')).first()
+
+def authorize():
+    if not logged_in_user():
+        return {'message': "No logged in user"}, 401
+
 def clean_ncaab_team_name(s):
     # Pattern explanation:
     # ^\(\d+\)\s* matches a string that starts with an opening parenthesis,
@@ -188,6 +198,33 @@ def create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_nam
 						}
 						arbitrage_opportunity_list.append(arbitrage_opportunity)
 	return arbitrage_opportunity_list
+
+def calculate_avg_profit(opportunities):
+    # Calculate average profit percent
+    profits = np.array([opportunity.profit_percent for opportunity in opportunities])
+    return np.mean(profits)
+
+def calculate_variance(opportunities):
+    # Calculate variance for a given list of opportunities and average profit percent
+    profits = np.array([opportunity.profit_percent for opportunity in opportunities])
+    return np.var(profits)
+
+def update_avg_profit_and_variance(league, team_1, team_2, bookie_1, bookie_2):
+    # Calculate and update average profit percent for league, team_1, team_2, bookie_1, bookie_2
+	league.avg_profit_percent = calculate_avg_profit(league.aos)
+	league.var_profit_percent = calculate_variance(league.aos)
+
+	team_1.avg_profit_percent = calculate_avg_profit(team_1.aos)
+	team_1.var_profit_percent = calculate_variance(team_1.aos)
+
+	team_2.avg_profit_percent = calculate_avg_profit(team_2.aos)
+	team_2.var_profit_percent = calculate_variance(team_2.aos)
+
+	bookie_1.avg_profit_percent = calculate_avg_profit(bookie_1.aos)
+	bookie_1.var_profit_percent = calculate_variance(bookie_2)
+
+	bookie_2.avg_profit_percent = calculate_avg_profit(bookie_2.aos)
+	bookie_2.var_profit_percent = calculate_variance(bookie_2.aos)
 
 # Automates the addition of any arbitrage opportunities to our database
 def add_arbitrages(arb_list, team_names_dict):
@@ -262,4 +299,7 @@ def add_arbitrages(arb_list, team_names_dict):
 					game_time=arb['game_time'],
 				)
 				db.session.add(opportunity)
+
+		update_avg_profit_and_variance(league, team_1, team_2, bookie_1, bookie_2)
 		db.session.commit()
+

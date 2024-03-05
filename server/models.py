@@ -1,10 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from sqlalchemy.orm import validates
-from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy.ext.associationproxy import association_proxy
-# from string import ascii_lowercase, ascii_uppercase, digits, punctuation
-
 
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
@@ -13,9 +9,7 @@ metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
 })
 
-
 db = SQLAlchemy(metadata=metadata)
-
 
 class User(db.Model):
 
@@ -24,21 +18,22 @@ class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	username = db.Column(db.String, nullable=False, unique=True)
 	password = db.Column(db.String)
-	first_name = db.Column(db.String, nullable=False)
-	last_name = db.Column(db.String, nullable=False)
+	email = db.Column(db.String)
 	budget = db.Column(db.Float)
 
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'username': self.username,
+			'email': self.email,
+			'budget': self.budget
+		}
 
 class ArbitrageOpportunity(db.Model):
 
 	__tablename__ = 'arbitrage_opportunities'
 
 	id = db.Column(db.Integer, primary_key=True)
-	bookie_1_id = db.Column(db.Integer, db.ForeignKey('bookies.id'))
-	bookie_2_id = db.Column(db.Integer, db.ForeignKey('bookies.id'))
-	team_1_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
-	team_2_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
-	league_id = db.Column(db.Integer, db.ForeignKey('leagues.id'))
 	moneyline_1 = db.Column(db.String)
 	moneyline_2 = db.Column(db.String)
 	decimal_1 = db.Column(db.Float)
@@ -52,12 +47,75 @@ class ArbitrageOpportunity(db.Model):
 	game_date = db.Column(db.String)
 	game_time = db.Column(db.String)
 
+	bookie_1_id = db.Column(db.Integer, db.ForeignKey('bookies.id'))
+	bookie_2_id = db.Column(db.Integer, db.ForeignKey('bookies.id'))
+	team_1_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
+	team_2_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
+	league_id = db.Column(db.Integer, db.ForeignKey('leagues.id'))
+
+	bookie_1 = db.relationship('Bookie', back_populates='aos_as_bookie_1')
+	bookie_2 = db.relationship('Bookie', back_populates='aos_as_bookie_2')
+	team_1 = db.relationship('Team', back_populates='aos_as_team_1')
+	team_2 = db.relationship('Team', back_populates='aos_as_team_2')
+	league = db.relationship('League', back_populates='aos')
+
+	def to_dict_short(self):
+		return {
+			'id': self.id,
+			'moneyline_1': self.moneyline_1,
+			'moneyline_2': self.moneyline_2,
+			'decimal_1': self.decimal_1,
+			'decimal_2': self.decimal_2,
+			'stake_1_percent': self.stake_1_percent,
+			'stake_2_percent': self.stake_2_percent,
+			'profit_percent': self.profit_percent,
+			'date': self.date,
+			'time': self.time,
+			'timezone': self.timezone,
+			'game_date': self.game_date,
+			'game_time': self.game_time,
+			'bookie_1_id': self.bookie_1_id,
+			'bookie_2_id': self.bookie_2_id,
+			'team_1_id': self.team_1_id,
+			'team_2_id': self.team_2_id,
+			'league_id': self.league_id
+		}
+
+	def to_dict(self):
+		return {
+			**(self.to_dict_short()),
+			'bookie_1': self.bookie_1.to_dict_short(),
+			'bookie_2': self.bookie_2.to_dict_short(),
+			'team_1': self.team_1.to_dict_short(),
+			'team_2': self.team_2.to_dict_short(),
+			'league': self.league.to_dict_short()
+		}
+
 class Bookie(db.Model):
 
 	__tablename__ = 'bookies'
 
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String)
+	avg_profit_percent = db.Column(db.Float)
+	var_profit_percent = db.Column(db.Float)
+	last_updated = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
+
+	aos_as_bookie_1 = db.relationship('ArbitrageOpportunity', back_populates='bookie_1')
+	aos_as_bookie_2 = db.relationship('ArbitrageOpportunity', back_populates='bookie_2')
+
+	def to_dict_short(self):
+		return {
+			'id': self.id,
+			'name': self.name
+		}
+
+	def to_dict(self):
+		return {
+			**(self.to_dict_short()),
+			'aos': [*[ao.to_dict_short() for ao in self.aos_as_bookie_1], *[ao.to_dict_short() for ao in self.aos_as_bookie_2]]
+		}
+
 
 class League(db.Model):
 
@@ -65,52 +123,54 @@ class League(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String)
+	avg_profit_percent = db.Column(db.Float)
+	var_profit_percent = db.Column(db.Float)
+	last_updated = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 
-	# league_arbitrage_opportunities = db.relationship('LeagueArbitrageOpportunity', back_populates='league')
-	# arbitrage_opportunities = association_proxy('league_arbitrage_opportunities', 'league')
+	teams = db.relationship('Team', back_populates='league')
+	aos = db.relationship('ArbitrageOpportunity', back_populates='league')
+
+	def to_dict_short(self):
+		return {
+			'id': self.id,
+			'name': self.name,
+		}
+
+	def to_dict(self):
+		return {
+			**(self.to_dict_short()),
+			'teams': [team.to_dict_short() for team in self.teams],
+			'aos': [ao.to_dict_short() for ao in self.aos]
+		}
 
 class Team(db.Model):
 
 	__tablename__ = 'teams'
 
 	id = db.Column(db.Integer, primary_key=True)
-	league_id = db.Column(db.String, db.ForeignKey('leagues.id'))
-	league_name = db.Column(db.String)
 	name = db.Column(db.String)
 	city = db.Column(db.String)
+	avg_profit_percent = db.Column(db.Float)
+	var_profit_percent = db.Column(db.Float)
+	last_updated = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 
-	# team_arbitrage_opportunities = db.relationship('TeamArbitrageOpportunity', back_populates='team')
-	# arbitrage_opportunities = association_proxy('team_arbitrage_opportunities', 'team')
+	league_id = db.Column(db.String, db.ForeignKey('leagues.id'))
 
-# class BookieArbitrageOpportunity(db.Model):
+	league = db.relationship('League', back_populates='teams')
+	aos_as_team_1 = db.relationship('ArbitrageOpportunity', back_populates='team_1')
+	aos_as_team_2 = db.relationship('ArbitrageOpportunity', back_populates='team_2')
 
-# 	__tablename__ = 'bookie_arbitrage_opportunities'
+	def to_dict_short(self):
+		return {
+			'id': self.id,
+			'name': self.name,
+			'city': self.city,
+			'league_id': self.league_id,
+		}
 
-# 	id = db.Column(db.Integer, primary_key=True)
-# 	arbitrage_opportunity_id = db.Column(db.Integer, db.ForeignKey('arbitrage_opportunities.id'))
-# 	bookie_id = db.Column(db.Integer, db.ForeignKey('bookies.id'))
-
-# 	arbitrage_opportunity = db.relationship('ArbitrageOpportunity', back_populates='bookie_arbitrage_opportunities')
-# 	bookie = db.relationship('Bookie', back_populates='bookie_arbitrage_opportunities')
-
-# class LeagueArbitrageOpportunity(db.Model):
-
-# 	__tablename__ = 'league_arbitrage_opportunities'
-
-# 	id = db.Column(db.Integer, primary_key=True)
-# 	arbitrage_opportunity_id = db.Column(db.Integer, db.ForeignKey('arbitrage_opportunities.id'))
-# 	league_id = db.Column(db.Integer, db.ForeignKey('leagues.id'))
-
-# 	arbitrage_opportunity = db.relationship('ArbitrageOpportunity', back_populates='league_arbitrage_opportunities')
-# 	league = db.relationship('League', back_populates='league_arbitrage_opportunities')
-
-# class TeamArbitrageOpportunity(db.Model):
-
-# 	__tablename__ = 'team_arbitrage_opportunities'
-
-# 	id = db.Column(db.Integer, primary_key=True)
-# 	arbitrage_opportunity_id = db.Column(db.Integer, db.ForeignKey('arbitrage_opportunities.id'))
-# 	team_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
-
-# 	arbitrage_opportunity = db.relationship('ArbitrageOpportunity', back_populates='team_arbitrage_opportunities')
-# 	team = db.relationship('Team', back_populates='team_arbitrage_opportunities')
+	def to_dict(self):
+		return {
+			**(self.to_dict_short()),
+			'league': self.league.to_dict_short(),
+			'aos': [*[ao.to_dict_short() for ao in self.aos_as_team_1], *[ao.to_dict_short() for ao in self.aos_as_team_2]]
+		}
