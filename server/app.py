@@ -7,7 +7,7 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 
 from models import db, ArbitrageOpportunity, User, Team, League, Bookie
-from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, add_arbitrages, clean_ncaab_team_name, create_games_dict_list, create_arbitrage_opportunities_list, logged_in_user, authorize
+from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, add_arbitrages, clean_ncaab_team_name, create_games_dict_list, create_arbitrage_opportunities_list, get_sport_data, logged_in_user, authorize
 
 app = Flask(__name__)
 app.secret_key = b'Y\xf1Xz\x00\xad|eQ\x80t \xca\x1a\x10K'
@@ -22,14 +22,6 @@ db.init_app(app)
 CORS(app)
 
 bcrypt = Bcrypt(app)
-
-def logged_in_user():
-    return User.query.filter(User.id == session.get('user_id')).first()
-
-def authorize():
-    if not logged_in_user():
-        return {'message': "No logged in user"}, 401
-
 
 @app.route('/')
 def index():
@@ -121,7 +113,7 @@ def nhl():
 	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
 	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-	game_dict_list= create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
 	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='nhl')
 	add_arbitrages(arbitrage_opportunity_list, NHL_TEAMS)
 
@@ -145,7 +137,7 @@ def ncaab():
 	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
 	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-	game_dict_list= create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
 	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='ncaab')
 	add_arbitrages(arb_list=arbitrage_opportunity_list, team_names_dict={})
 
@@ -169,7 +161,7 @@ def mlb():
 	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
 	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-	game_dict_list= create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
 	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='mlb')
 	add_arbitrages(arb_list=arbitrage_opportunity_list, team_names_dict=MLB_TEAMS)
 

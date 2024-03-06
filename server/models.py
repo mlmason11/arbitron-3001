@@ -107,7 +107,10 @@ class Bookie(db.Model):
 	def to_dict_short(self):
 		return {
 			'id': self.id,
-			'name': self.name
+			'name': self.name,
+			'avg_profit_percent': self.avg_profit_percent,
+			'var_profit_percent': self.var_profit_percent,
+			'last_updated': self.last_updated
 		}
 
 	def to_dict(self):
@@ -115,7 +118,6 @@ class Bookie(db.Model):
 			**(self.to_dict_short()),
 			'aos': [*[ao.to_dict_short() for ao in self.aos_as_bookie_1], *[ao.to_dict_short() for ao in self.aos_as_bookie_2]]
 		}
-
 
 class League(db.Model):
 
@@ -134,6 +136,9 @@ class League(db.Model):
 		return {
 			'id': self.id,
 			'name': self.name,
+			'avg_profit_percent': self.avg_profit_percent,
+			'var_profit_percent': self.var_profit_percent,
+			'last_updated': self.last_updated
 		}
 
 	def to_dict(self):
@@ -165,6 +170,9 @@ class Team(db.Model):
 			'id': self.id,
 			'name': self.name,
 			'city': self.city,
+			'avg_profit_percent': self.avg_profit_percent,
+			'var_profit_percent': self.var_profit_percent,
+			'last_updated': self.last_updated,
 			'league_id': self.league_id,
 		}
 
