@@ -5,15 +5,20 @@ name = "pypi"
 
 [packages]
 bs4 = "*"
+crontab = "*"
+datetime = "*"
 flask = "*"
 flask-cors = "*"
 flask-migrate = "*"
 flask-sqlalchemy = "*"
 ipdb = "*"
+numpy = "*"
 pytest = "*"
+re = "*"
 requests = "*"
 seleneum = "*"
 sqlalchemy-serializer = "*"
+time = "*"
 
 
 [dev-packages]

@@ -1,10 +1,12 @@
 import numpy as np
 import re
 import requests
+
 from bs4 import BeautifulSoup as BS
-from app import session, make_response, jsonify
+from app import session
 from datetime import datetime
 from time import localtime
+
 from models import db, ArbitrageOpportunity, Team, League, Bookie, User
 
 # Date located in <p> tag with class name OddsTable_timeText__lFfv_
@@ -300,28 +302,23 @@ def add_arbitrages(arb_list, team_names_dict):
 					game_time=arb['game_time'],
 				)
 				db.session.add(opportunity)
+				update_avg_profit_and_variance(league, team_1, team_2, bookie_1, bookie_2)
 
-		update_avg_profit_and_variance(league, team_1, team_2, bookie_1, bookie_2)
 		db.session.commit()
 
-# def get_sport_data(url, teams_selector, league_name, team_names_dict={}):
-#     # Retrieve information from the website and make the BeautifulSoup object, our "soup"
-#     data = requests.get(url)
-#     soup = BS(data.text, 'html.parser')
+def get_sport_data(url, teams_selector, league_name, team_names_dict={}):
+	# Retrieve information from the website and make the BeautifulSoup object, our "soup"
+	data = requests.get(url)
+	soup = BS(data.text, 'html.parser')
+	# We get the specific information from the selected html elements in the BeautifulSoup object
+	date = soup.find('p', class_='OddsTable_timeText__lFfv_').get_text()
+	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
+	teams_list = [teams_selector(obj) for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
+	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
+	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-#     # We get the specific information from the selected html elements in the BeautifulSoup object
-#     date = soup.find('p', class_='OddsTable_timeText__lFfv_').get_text()
-#     game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
-#     teams_list = [teams_selector(obj) for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
-#     odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
-#     bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name=league_name)
+	add_arbitrages(arb_list=arbitrage_opportunity_list, team_names_dict=team_names_dict)
 
-#     game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
-#     arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name=league_name)
-#     add_arbitrages(arb_list=arbitrage_opportunity_list, team_names_dict=team_names_dict)
-
-#     # Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notify the user of this.
-#     if len(arbitrage_opportunity_list) > 0:
-#         return make_response(jsonify(arbitrage_opportunity_list), 200)
-#     else:
-#         return make_response(jsonify({'error': f'no arbitrage betting opportunities available for {league_name.upper()} at this time'}))
+	return [game_dict_list, arbitrage_opportunity_list]
