@@ -53,11 +53,12 @@ class ArbitrageOpportunity(db.Model):
 	team_2_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
 	league_id = db.Column(db.Integer, db.ForeignKey('leagues.id'))
 
-	bookie_1 = db.relationship('Bookie', back_populates='aos_as_bookie_1')
-	bookie_2 = db.relationship('Bookie', back_populates='aos_as_bookie_2')
-	team_1 = db.relationship('Team', back_populates='aos_as_team_1')
-	team_2 = db.relationship('Team', back_populates='aos_as_team_2')
+	bookie_1 = db.relationship('Bookie', back_populates='aos_as_bookie_1', foreign_keys=[bookie_1_id])
+	bookie_2 = db.relationship('Bookie', back_populates='aos_as_bookie_2', foreign_keys=[bookie_2_id])
+	team_1 = db.relationship('Team', back_populates='aos_as_team_1', foreign_keys=[team_1_id])
+	team_2 = db.relationship('Team', back_populates='aos_as_team_2', foreign_keys=[team_2_id])
 	league = db.relationship('League', back_populates='aos')
+
 
 	def to_dict_short(self):
 		return {
@@ -99,10 +100,10 @@ class Bookie(db.Model):
 	name = db.Column(db.String)
 	avg_profit_percent = db.Column(db.Float)
 	var_profit_percent = db.Column(db.Float)
-	last_updated = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
+	last_updated_utc = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 
-	aos_as_bookie_1 = db.relationship('ArbitrageOpportunity', back_populates='bookie_1')
-	aos_as_bookie_2 = db.relationship('ArbitrageOpportunity', back_populates='bookie_2')
+	aos_as_bookie_1 = db.relationship('ArbitrageOpportunity', back_populates='bookie_1', foreign_keys=ArbitrageOpportunity.bookie_1_id)
+	aos_as_bookie_2 = db.relationship('ArbitrageOpportunity', back_populates='bookie_2', foreign_keys=ArbitrageOpportunity.bookie_2_id)
 
 	def to_dict_short(self):
 		return {
@@ -116,7 +117,8 @@ class Bookie(db.Model):
 	def to_dict(self):
 		return {
 			**(self.to_dict_short()),
-			'aos': [*[ao.to_dict_short() for ao in self.aos_as_bookie_1], *[ao.to_dict_short() for ao in self.aos_as_bookie_2]]
+			'aos_as_bookie_1': [ao.to_dict_short for ao in self.aos_as_bookie_1],
+			'aos_as_bookie_2': [ao.to_dict_short for ao in self.aos_as_bookie_2]
 		}
 
 class League(db.Model):
@@ -127,7 +129,7 @@ class League(db.Model):
 	name = db.Column(db.String)
 	avg_profit_percent = db.Column(db.Float)
 	var_profit_percent = db.Column(db.Float)
-	last_updated = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
+	last_updated_utc = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 
 	teams = db.relationship('Team', back_populates='league')
 	aos = db.relationship('ArbitrageOpportunity', back_populates='league')
@@ -157,13 +159,12 @@ class Team(db.Model):
 	city = db.Column(db.String)
 	avg_profit_percent = db.Column(db.Float)
 	var_profit_percent = db.Column(db.Float)
-	last_updated = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
+	last_updated_utc = db.Column(db.DateTime(timezone=True), onupdate=db.func.now())
 
 	league_id = db.Column(db.String, db.ForeignKey('leagues.id'))
-
 	league = db.relationship('League', back_populates='teams')
-	aos_as_team_1 = db.relationship('ArbitrageOpportunity', back_populates='team_1')
-	aos_as_team_2 = db.relationship('ArbitrageOpportunity', back_populates='team_2')
+	aos_as_team_1 = db.relationship('ArbitrageOpportunity', back_populates='team_1', foreign_keys=ArbitrageOpportunity.team_1_id)
+	aos_as_team_2 = db.relationship('ArbitrageOpportunity', back_populates='team_2', foreign_keys=ArbitrageOpportunity.team_2_id)
 
 	def to_dict_short(self):
 		return {
@@ -173,12 +174,13 @@ class Team(db.Model):
 			'avg_profit_percent': self.avg_profit_percent,
 			'var_profit_percent': self.var_profit_percent,
 			'last_updated': self.last_updated,
-			'league_id': self.league_id,
+			'league_id': self.league_id
 		}
 
 	def to_dict(self):
 		return {
-			**(self.to_dict_short()),
+			**(self.to_dict_short),
 			'league': self.league.to_dict_short(),
-			'aos': [*[ao.to_dict_short() for ao in self.aos_as_team_1], *[ao.to_dict_short() for ao in self.aos_as_team_2]]
+			'aos_as_team_1': [ao.to_dict_short() for ao in self.aos_as_team_1],
+			'aos_as_team_2': [ao.to_dict_short() for ao in self.aos_as_team_2]
 		}

@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 4a4495412728
+Revision ID: 6add351a9cda
 Revises: 
-Create Date: 2024-02-27 17:36:00.162374
+Create Date: 2024-03-08 16:18:32.098215
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '4a4495412728'
+revision = '6add351a9cda'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -21,44 +21,58 @@ def upgrade():
     op.create_table('bookies',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
+    sa.Column('avg_profit_percent', sa.Float(), nullable=True),
+    sa.Column('var_profit_percent', sa.Float(), nullable=True),
+    sa.Column('last_updated_utc', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('leagues',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
-    sa.Column('sport', sa.String(), nullable=True),
+    sa.Column('avg_profit_percent', sa.Float(), nullable=True),
+    sa.Column('var_profit_percent', sa.Float(), nullable=True),
+    sa.Column('last_updated_utc', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('username', sa.String(), nullable=False),
     sa.Column('password', sa.String(), nullable=True),
-    sa.Column('first_name', sa.String(), nullable=False),
-    sa.Column('last_name', sa.String(), nullable=False),
+    sa.Column('email', sa.String(), nullable=True),
     sa.Column('budget', sa.Float(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('username', name=op.f('uq_users_username'))
     )
     op.create_table('teams',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('league_id', sa.String(), nullable=True),
     sa.Column('name', sa.String(), nullable=True),
     sa.Column('city', sa.String(), nullable=True),
+    sa.Column('avg_profit_percent', sa.Float(), nullable=True),
+    sa.Column('var_profit_percent', sa.Float(), nullable=True),
+    sa.Column('last_updated_utc', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('league_id', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['league_id'], ['leagues.id'], name=op.f('fk_teams_league_id_leagues')),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('arbitrage_opportunities',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('bookie_1_id', sa.String(), nullable=True),
-    sa.Column('bookie_2_id', sa.String(), nullable=True),
+    sa.Column('moneyline_1', sa.String(), nullable=True),
+    sa.Column('moneyline_2', sa.String(), nullable=True),
+    sa.Column('decimal_1', sa.Float(), nullable=True),
+    sa.Column('decimal_2', sa.Float(), nullable=True),
+    sa.Column('stake_1_percent', sa.Float(), nullable=True),
+    sa.Column('stake_2_percent', sa.Float(), nullable=True),
+    sa.Column('profit_percent', sa.Float(), nullable=True),
+    sa.Column('date', sa.String(), nullable=True),
+    sa.Column('time', sa.String(), nullable=True),
+    sa.Column('timezone', sa.String(), nullable=True),
+    sa.Column('game_date', sa.String(), nullable=True),
+    sa.Column('game_time', sa.String(), nullable=True),
+    sa.Column('bookie_1_id', sa.Integer(), nullable=True),
+    sa.Column('bookie_2_id', sa.Integer(), nullable=True),
     sa.Column('team_1_id', sa.Integer(), nullable=True),
     sa.Column('team_2_id', sa.Integer(), nullable=True),
-    sa.Column('league_id', sa.String(), nullable=True),
-    sa.Column('profit', sa.Float(), nullable=True),
-    sa.Column('day', sa.Integer(), nullable=True),
-    sa.Column('month', sa.Integer(), nullable=True),
-    sa.Column('year', sa.Integer(), nullable=True),
-    sa.Column('time', sa.String(), nullable=True),
+    sa.Column('league_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['bookie_1_id'], ['bookies.id'], name=op.f('fk_arbitrage_opportunities_bookie_1_id_bookies')),
     sa.ForeignKeyConstraint(['bookie_2_id'], ['bookies.id'], name=op.f('fk_arbitrage_opportunities_bookie_2_id_bookies')),
     sa.ForeignKeyConstraint(['league_id'], ['leagues.id'], name=op.f('fk_arbitrage_opportunities_league_id_leagues')),
@@ -66,29 +80,11 @@ def upgrade():
     sa.ForeignKeyConstraint(['team_2_id'], ['teams.id'], name=op.f('fk_arbitrage_opportunities_team_2_id_teams')),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('league_arbitrage_opportunities',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('arbitrage_opportunity_id', sa.Integer(), nullable=True),
-    sa.Column('league_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['arbitrage_opportunity_id'], ['arbitrage_opportunities.id'], name=op.f('fk_league_arbitrage_opportunities_arbitrage_opportunity_id_arbitrage_opportunities')),
-    sa.ForeignKeyConstraint(['league_id'], ['leagues.id'], name=op.f('fk_league_arbitrage_opportunities_league_id_leagues')),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('team_arbitrage_opportunities',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('arbitrage_opportunity_id', sa.Integer(), nullable=True),
-    sa.Column('team_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['arbitrage_opportunity_id'], ['arbitrage_opportunities.id'], name=op.f('fk_team_arbitrage_opportunities_arbitrage_opportunity_id_arbitrage_opportunities')),
-    sa.ForeignKeyConstraint(['team_id'], ['teams.id'], name=op.f('fk_team_arbitrage_opportunities_team_id_teams')),
-    sa.PrimaryKeyConstraint('id')
-    )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('team_arbitrage_opportunities')
-    op.drop_table('league_arbitrage_opportunities')
     op.drop_table('arbitrage_opportunities')
     op.drop_table('teams')
     op.drop_table('users')

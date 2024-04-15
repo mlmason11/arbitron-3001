@@ -1,11 +1,13 @@
+import requests
 from bs4 import BeautifulSoup as BS
+# from selenium import webdriver
 from flask import Flask, jsonify, request, session, make_response
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 
 from models import db, ArbitrageOpportunity, User, Team, League, Bookie
-from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, clean_ncaab_team_name, get_sport_data
+from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, add_arbitrages, clean_ncaab_team_name, create_games_dict_list, create_arbitrage_opportunities_list, update_avg_profit_and_variance
 
 app = Flask(__name__)
 app.secret_key = b'Y\xf1Xz\x00\xad|eQ\x80t \xca\x1a\x10K'
@@ -76,77 +78,104 @@ def check_session():
 
 @app.route('/nba')
 def nba():
-	try:
-		# game_dict_list = get_sport_data('https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line/full-game/',
-		#                       lambda obj: obj.contents[0].get_text(),
-		#                       'nba',
-		#                       NBA_TEAMS)[0]
+	# Retrieve information from the website and make the BeautifulSoup object, our "soup"
+	data = requests.get('https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line/full-game/')
+	soup = BS(data.text, 'html.parser')
 
-		arbitrage_opportunity_list = get_sport_data('https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line/full-game/',
-							lambda obj: obj.contents[0].get_text(),
-							'nba',
-							NBA_TEAMS)[1]
+	# We get the specific information from the selected html elements in the BeautifulSoup object
+	date = soup.find('p', class_='OddsTable_timeText__lFfv_').get_text()
+	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
+	teams_list = [obj.get_text() for obj in soup.find_all('span', class_='GameRows_participantBox__0WCRz')]
+	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
+	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-		# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notify the user of this.
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='nba')
+	add_arbitrages(arbitrage_opportunity_list, NBA_TEAMS)
+	update_avg_profit_and_variance(league_name='nba')
+
+	# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notifiy the user of this.
+	if len(arbitrage_opportunity_list) > 0:
 		return make_response(jsonify(arbitrage_opportunity_list), 200)
-
-	except AttributeError:
-		return make_response(jsonify({'error': f'no arbitrage betting opportunities available for the NBA at this time'}))
+	else:
+		# return make_response(jsonify({'error': 'no arbitrage opportunities can be found at this time'}), 200)
+		return make_response(jsonify(game_dict_list))
 
 @app.route('/nhl')
 def nhl():
-	try:
-		# game_dict_list = get_sport_data('https://www.sportsbookreview.com/betting-odds/nhl-hockey/',
-		# 					lambda obj: obj.contents[1].contents[0].get_text(),
-		# 					'nhl',
-		# 					NHL_TEAMS)[0]
+	# Retrieve information from the website and make the BeautifulSoup object, our "soup"
+	data = requests.get('https://www.sportsbookreview.com/betting-odds/nhl-hockey/')
+	soup = BS(data.text, 'html.parser')
 
-		arbitrage_opportunity_list = get_sport_data('https://www.sportsbookreview.com/betting-odds/nhl-hockey/',
-							lambda obj: obj.contents[1].contents[0].get_text(),
-							'nhl',
-							NHL_TEAMS)[1]
+	# We get the specific information from the selected html elements in the BeautifulSoup object
+	date = soup.find('p', class_='OddsTable_timeText__lFfv_').get_text()
+	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
+	teams_list = [obj.contents[1].contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
+	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
+	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-		# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notify the user of this.
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='nhl')
+	add_arbitrages(arbitrage_opportunity_list, NHL_TEAMS)
+	update_avg_profit_and_variance(league_name='nhl')
+
+	# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notifiy the user of this.
+	if len(arbitrage_opportunity_list) > 0:
 		return make_response(jsonify(arbitrage_opportunity_list), 200)
-
-	except AttributeError:
-		return make_response(jsonify({'error': f'no arbitrage betting opportunities available for the NHL at this time'}))
+	else:
+		# return make_response(jsonify({'error': 'no arbitrage opportunities can be found at this time'}), 200)
+		return make_response(jsonify({'error': 'no arbitrage betting opportunities available at this time'}))
 
 @app.route('/ncaab')
 def ncaab():
-	try:
-		# game_dict_list = get_sport_data('https://www.sportsbookreview.com/betting-odds/ncaa-basketball/money-line/full-game/',
-        #                   lambda obj: clean_ncaab_team_name(obj.contents[1].contents[0].get_text()),
-        #                   'ncaab')[0]
+	# Retrieve information from the website and make the BeautifulSoup object, our "soup"
+	data = requests.get('https://www.sportsbookreview.com/betting-odds/ncaa-basketball/money-line/full-game/')
+	soup = BS(data.text, 'html.parser')
 
-		arbitrage_opportunity_list = get_sport_data('https://www.sportsbookreview.com/betting-odds/ncaa-basketball/money-line/full-game/',
-                          lambda obj: clean_ncaab_team_name(obj.contents[1].contents[0].get_text()),
-                          'ncaab')[1]
+	# We get the specific information from the selected html elements in the BeautifulSoup object
+	date = soup.find('p', class_='OddsTable_timeText__lFfv_').get_text()
+	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
+	teams_list = [clean_ncaab_team_name(obj.contents[1].contents[0].get_text()) for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
+	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
+	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-		# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notify the user of this.
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='ncaab')
+	add_arbitrages(arbitrage_opportunity_list, team_names_dict={})
+	update_avg_profit_and_variance(league_name='ncaab')
+
+	# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notifiy the user of this.
+	if len(arbitrage_opportunity_list) > 0:
+		print('added arbitrages')
 		return make_response(jsonify(arbitrage_opportunity_list), 200)
-
-	except AttributeError:
-		return make_response(jsonify({'error': f'no arbitrage betting opportunities available for college basketball at this time'}))
+	else:
+		# return make_response(jsonify({'error': 'no arbitrage opportunities can be found at this time'}), 200)
+		return make_response(jsonify(game_dict_list))
 
 @app.route('/mlb')
 def mlb():
-	try:
-		# game_dict_list = get_sport_data('https://www.sportsbookreview.com/betting-odds/mlb-baseball/',
-		# 					lambda obj: obj.contents[1].contents[0].get_text(),
-		# 					'mlb',
-		# 					MLB_TEAMS)[0]
+	# Retrieve information from the website and make the BeautifulSoup object, our "soup"
+	data = requests.get('https://www.sportsbookreview.com/betting-odds/mlb-baseball/')
+	soup = BS(data.text, 'html.parser')
 
-		arbitrage_opportunity_list = get_sport_data('https://www.sportsbookreview.com/betting-odds/mlb-baseball/',
-							lambda obj: obj.contents[1].contents[0].get_text(),
-							'mlb',
-							MLB_TEAMS)[1]
+	# We get the specific information from the selected html elements in the BeautifulSoup object
+	date = soup.find('p', class_='OddsTable_timeText__lFfv_').get_text()
+	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
+	teams_list = [obj.contents[1].contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
+	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
+	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-		# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notify the user of this.
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='mlb')
+	add_arbitrages(arbitrage_opportunity_list, MLB_TEAMS)
+	update_avg_profit_and_variance(league_name='mlb')
+
+	# Return any arbitrage opportunities as a jsonified list. If there are no opportunities then we notifiy the user of this.
+	if len(arbitrage_opportunity_list) > 0:
 		return make_response(jsonify(arbitrage_opportunity_list), 200)
-
-	except AttributeError:
-		return make_response(jsonify({'error': f'no arbitrage betting opportunities available for the MLB at this time'}))
+	else:
+		# return make_response(jsonify({'error': 'no arbitrage opportunities can be found at this time'}), 200)
+		return make_response(jsonify(game_dict_list))
 
 @app.get('/arbitrage_opportunities')
 def get_arbitrage_opportunities_all():

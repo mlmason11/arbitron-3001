@@ -1,9 +1,7 @@
 import numpy as np
 import re
 import requests
-
 from bs4 import BeautifulSoup as BS
-from app import session
 from datetime import datetime
 from time import localtime
 
@@ -125,13 +123,6 @@ MLB_TEAMS = {
     'WAS': 'Nationals'
 }
 
-def logged_in_user():
-    return User.query.filter(User.id == session.get('user_id')).first()
-
-def authorize():
-    if not logged_in_user():
-        return {'message': "No logged in user"}, 401
-
 def clean_ncaab_team_name(s):
     # Pattern explanation:
     # ^\(\d+\)\s* matches a string that starts with an opening parenthesis,
@@ -188,12 +179,12 @@ def create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_nam
 							'game_time': game['game_time'],
 							'profit_percent': 1 / arb_decimal,
 							'bookie_1': bookies_list[i],
-							'decimal_1': decimal_1,
+							'decimal_1': 1/decimal_1,
 							'moneyline_1': game['team_1_odds'][bookies_list[i]],
 							'stake_1_percent': decimal_1 / arb_decimal,
 							'team_1': game['team_1'],
 							'bookie_2': bookies_list[j],
-							'decimal_2': decimal_2,
+							'decimal_2': 1/decimal_2,
 							'moneyline_2': game['team_2_odds'][bookies_list[j]],
 							'stake_2_percent': decimal_2 / arb_decimal,
 							'team_2': game['team_2'],
@@ -202,69 +193,40 @@ def create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_nam
 						arbitrage_opportunity_list.append(arbitrage_opportunity)
 	return arbitrage_opportunity_list
 
-def calculate_avg_profit(opportunities):
-    # Calculate average profit percent
-    profits = np.array([opportunity.profit_percent for opportunity in opportunities])
-    return np.mean(profits)
-
-def calculate_variance(opportunities):
-    # Calculate variance for a given list of opportunities and average profit percent
-    profits = np.array([opportunity.profit_percent for opportunity in opportunities])
-    return np.var(profits)
-
-def update_avg_profit_and_variance(league, team_1, team_2, bookie_1, bookie_2):
-    # Calculate and update average profit percent for league, team_1, team_2, bookie_1, bookie_2
-	league.avg_profit_percent = calculate_avg_profit(league.aos)
-	league.var_profit_percent = calculate_variance(league.aos)
-
-	team_1.avg_profit_percent = calculate_avg_profit(team_1.aos)
-	team_1.var_profit_percent = calculate_variance(team_1.aos)
-
-	team_2.avg_profit_percent = calculate_avg_profit(team_2.aos)
-	team_2.var_profit_percent = calculate_variance(team_2.aos)
-
-	bookie_1.avg_profit_percent = calculate_avg_profit(bookie_1.aos)
-	bookie_1.var_profit_percent = calculate_variance(bookie_2)
-
-	bookie_2.avg_profit_percent = calculate_avg_profit(bookie_2.aos)
-	bookie_2.var_profit_percent = calculate_variance(bookie_2.aos)
-
 # Automates the addition of any arbitrage opportunities to our database
 def add_arbitrages(arb_list, team_names_dict):
 	if len(arb_list) > 0:
 		for arb in arb_list:
-			league = League.query.filter_by(name=arb['league_name']).first()
+			league = League.query.filter(League.name == arb['league_name']).first()
 			if not league:
 				league = League(name=arb['league_name'])
 				db.session.add(league)
 
-			bookie_1 = Bookie.query.filter_by(name=arb['bookie_1']).first()
+			bookie_1 = Bookie.query.filter(Bookie.name == arb['bookie_1']).first()
 			if not bookie_1:
 				bookie_1 = Bookie(name=arb['bookie_1'])
 				db.session.add(bookie_1)
 
-			bookie_2 = Bookie.query.filter_by(name=arb['bookie_2']).first()
+			bookie_2 = Bookie.query.filter(Bookie.name == arb['bookie_2']).first()
 			if not bookie_2:
 				bookie_2 = Bookie(name=arb['bookie_2'])
 				db.session.add(bookie_2)
 
-			team_1 = Team.query.filter_by(name=(arb['team_1'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_1']])).first()
+			team_1 = Team.query.filter(Team.name == (arb['team_1'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_1']])).first()
 			if not team_1:
 				team_1 = Team(
-					league_id=league.id,
-					league_name=arb['league_name'],
 					name=arb['team_1'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_1']],
-					city=arb['team_1']
+					city=arb['team_1'],
+					league_id=league.id
 				)
 				db.session.add(team_1)
 
-			team_2 = Team.query.filter_by(name=(arb['team_2'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_2']])).first()
+			team_2 = Team.query.filter(Team.name == (arb['team_2'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_2']])).first()
 			if not team_2:
 				team_2 = Team(
-					league_id=league.id,
-					league_name=arb['league_name'],
 					name=arb['team_2'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_2']],
-					city=arb['team_2']
+					city=arb['team_2'],
+					league_id=league.id
 				)
 				db.session.add(team_2)
 
@@ -299,12 +261,52 @@ def add_arbitrages(arb_list, team_names_dict):
 					time=arb['current_time'],
 					timezone=arb['current_timezone'],
 					game_date=arb['game_date'],
-					game_time=arb['game_time'],
+					game_time=arb['game_time']
 				)
 				db.session.add(opportunity)
-				update_avg_profit_and_variance(league, team_1, team_2, bookie_1, bookie_2)
 
 		db.session.commit()
+
+def calculate_avg_profit(opportunities):
+    # Calculate average profit percent
+    profit_percentage = np.array([opportunity.profit_percent for opportunity in opportunities])
+    return np.mean(profit_percentage)
+
+def calculate_variance(opportunities):
+    # Calculate variance for a given list of opportunities and average profit percent
+    profit_percentage = np.array([opportunity.profit_percent for opportunity in opportunities])
+    return np.var(profit_percentage)
+
+def update_avg_profit_and_variance(league_name):
+    # Calculate and update average profit percent for all leagues, teams, and bookies
+	league = League.query.filter(League.name == league_name).first()
+	if league:
+		league_arbs = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.league_id == league.id).all()
+		if league_arbs:
+			league.avg_profit_percent = calculate_avg_profit(league_arbs)
+			league.var_profit_percent = calculate_variance(league_arbs)
+
+	teams = Team.query.filter(Team.league_id == league.id).all()
+	if teams:
+		for team in teams:
+			team_arbs_1 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.team_1_id == team.id).all()
+			team_arbs_2 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.team_2_id == team.id).all()
+			team_arbs = [*team_arbs_1, *team_arbs_2]
+			if team_arbs:
+				team.avg_profit_percent = calculate_avg_profit(team_arbs)
+				team.var_profit_percent = calculate_variance(team_arbs)
+
+	bookies = Bookie.query.all()
+	if bookies:
+		for bookie in bookies:
+			bookie_arbs_1 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.bookie_1_id == bookie.id).all()
+			bookie_arbs_2 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.bookie_2_id == bookie.id).all()
+			bookie_arbs = [*bookie_arbs_1, *bookie_arbs_2]
+			if bookie_arbs:
+				bookie.avg_profit_percent = calculate_avg_profit(bookie_arbs)
+				bookie.var_profit_percent = calculate_variance(bookie_arbs)
+
+	db.session.commit()
 
 def get_sport_data(url, teams_selector, league_name, team_names_dict={}):
 	# Retrieve information from the website and make the BeautifulSoup object, our "soup"
@@ -321,4 +323,5 @@ def get_sport_data(url, teams_selector, league_name, team_names_dict={}):
 	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name=league_name)
 	add_arbitrages(arb_list=arbitrage_opportunity_list, team_names_dict=team_names_dict)
 
-	return [game_dict_list, arbitrage_opportunity_list]
+	if len(arbitrage_opportunity_list) > 0:
+		update_avg_profit_and_variance(league_name)
