@@ -28,7 +28,7 @@ It tracks major professional leagues including the NBA, NHL, and the MLB, as wel
 
 ### Custom ETL Processes
 
-Utilizes web scraping to extract money-line odds from various bookkeepers, transforming them into usable data. It then organizes relevant information into a Flask-SQL database for easy access and analysis.
+Utilizes web scraping to extract money-line odds from various Bookkeepers, transforming them into usable data. It then organizes relevant information into a Flask-SQL database for easy access and analysis.
 
 ## Technologies Used and Implementation
 
@@ -86,7 +86,7 @@ A timer is being implemented to run the scraper every 15 minutes, enhancing data
 
 ### Data Visualization and Advanced Analysis
 
-A rigorous analysis of collected data is planned to uncover any emerging patterns related to arbitrage in sports betting. These will mainly be related to the percentage profit each team, league, and bookkeeper generate per arbitrage opportunity. React.js will be used as the backbone, and data visualization tools (TBD) will display any discovered patterns effectively.
+A rigorous analysis of collected data is planned to uncover any emerging patterns related to arbitrage in sports betting. These will mainly be related to the percentage profit each team, league, and Bookkeeper generate per arbitrage opportunity. React.js will be used as the backbone, and data visualization tools (TBD) will display any discovered patterns effectively.
 
 ## Acknowledgments
 

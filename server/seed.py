@@ -1,6 +1,6 @@
 from app import app
 from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, clean_ncaab_team_name, get_sport_data, calculate_avg_profit, calculate_variance
-from models import db, ArbitrageOpportunity, Bookie, League, Team
+from models import db, ArbitrageOpportunity, Bookkeeper, League, Team
 
 if __name__ == '__main__':
 	with app.app_context():
@@ -32,14 +32,14 @@ if __name__ == '__main__':
 				team.avg_profit_percent = calculate_avg_profit(team_arbs)
 				team.var_profit_percent = calculate_variance(team_arbs)
 
-		bookies = Bookie.query.all()
-		for bookie in bookies:
-			bookie_arbs_1 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.bookie_1_id == bookie.id)
-			bookie_arbs_2 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.bookie_2_id == bookie.id)
-			bookie_arbs = [*bookie_arbs_1, *bookie_arbs_2]
-			if bookie_arbs:
-				bookie.avg_profit_percent = calculate_avg_profit(bookie_arbs)
-				bookie.var_profit_percent = calculate_variance(bookie_arbs)
+		Bookkeepers = Bookkeeper.query.all()
+		for Bookkeeper in Bookkeepers:
+			Bookkeeper_arbs_1 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.Bookkeeper_1_id == Bookkeeper.id)
+			Bookkeeper_arbs_2 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.Bookkeeper_2_id == Bookkeeper.id)
+			Bookkeeper_arbs = [*Bookkeeper_arbs_1, *Bookkeeper_arbs_2]
+			if Bookkeeper_arbs:
+				Bookkeeper.avg_profit_percent = calculate_avg_profit(Bookkeeper_arbs)
+				Bookkeeper.var_profit_percent = calculate_variance(Bookkeeper_arbs)
 
 		leagues = League.query.all()
 		for league in leagues:

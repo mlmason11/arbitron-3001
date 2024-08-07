@@ -6,7 +6,7 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 
-from models import db, ArbitrageOpportunity, User, Team, League, Bookie
+from models import db, ArbitrageOpportunity, User, Team, League, Bookkeeper
 from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, add_arbitrages, clean_ncaab_team_name, create_games_dict_list, create_arbitrage_opportunities_list, update_avg_profit_and_variance
 
 app = Flask(__name__)
@@ -87,10 +87,10 @@ def nba():
 	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
 	teams_list = [obj.get_text() for obj in soup.find_all('span', class_='GameRows_participantBox__0WCRz')]
 	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
-	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
+	Bookkeepers_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
-	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='nba')
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, Bookkeepers_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, Bookkeepers_list, league_name='nba')
 	add_arbitrages(arbitrage_opportunity_list, NBA_TEAMS)
 	update_avg_profit_and_variance(league_name='nba')
 
@@ -112,10 +112,10 @@ def nhl():
 	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
 	teams_list = [obj.contents[1].contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
 	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
-	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
+	Bookkeepers_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
-	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='nhl')
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, Bookkeepers_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, Bookkeepers_list, league_name='nhl')
 	add_arbitrages(arbitrage_opportunity_list, NHL_TEAMS)
 	update_avg_profit_and_variance(league_name='nhl')
 
@@ -137,10 +137,10 @@ def ncaab():
 	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
 	teams_list = [clean_ncaab_team_name(obj.contents[1].contents[0].get_text()) for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
 	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
-	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
+	Bookkeepers_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
-	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='ncaab')
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, Bookkeepers_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, Bookkeepers_list, league_name='ncaab')
 	add_arbitrages(arbitrage_opportunity_list, team_names_dict={})
 	update_avg_profit_and_variance(league_name='ncaab')
 
@@ -163,10 +163,10 @@ def mlb():
 	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
 	teams_list = [obj.contents[1].contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
 	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
-	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
+	Bookkeepers_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
-	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name='mlb')
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, Bookkeepers_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, Bookkeepers_list, league_name='mlb')
 	add_arbitrages(arbitrage_opportunity_list, MLB_TEAMS)
 	update_avg_profit_and_variance(league_name='mlb')
 
@@ -246,27 +246,27 @@ def get_team_by_id():
 	except AttributeError:
 		return make_response( jsonify({ 'error': '404 team not found' }), 404 )
 
-@app.get('/bookkeepers/')
-def get_bookkeepers_all():
+@app.get('/Bookkeepers/')
+def get_Bookkeepers_all():
 	try:
-		bks = Bookie.query.all()
+		bks = Bookkeeper.query.all()
 		bk_list = [bk.to_dict() for bk in bks]
 		return make_response( jsonify( bk_list ), 200 )
 	except AttributeError:
-		return make_response( jsonify({ 'error': '404 bookkeepers not found' }), 404 )
+		return make_response( jsonify({ 'error': '404 Bookkeepers not found' }), 404 )
 
-@app.get('/bookkeepers/<int:id>')
-def get_bookkeeper_by_id():
+@app.get('/Bookkeepers/<int:id>')
+def get_Bookkeeper_by_id():
 	try:
-		bk = Bookie.query.filter(Bookie.id == id).first()
-		bk_aos_1 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.bookie_1_id == id)
+		bk = Bookkeeper.query.filter(Bookkeeper.id == id).first()
+		bk_aos_1 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.Bookkeeper_1_id == id)
 		bkao1_list = [bkao1.to_dict() for bkao1 in bk_aos_1]
-		bk_aos_2 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.bookie_2_id == id)
+		bk_aos_2 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.Bookkeeper_2_id == id)
 		bkao2_list = [bkao2.to_dict() for bkao2 in bk_aos_2]
 		bk_info_list = [bk.to_dict(), *bkao1_list, *bkao2_list]
 		return make_response( jsonify( bk_info_list ), 200 )
 	except AttributeError:
-		return make_response( jsonify({ 'error': '404 bookkeeper not found' }), 404 )
+		return make_response( jsonify({ 'error': '404 Bookkeeper not found' }), 404 )
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
