@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup as BS
 from datetime import datetime
 from time import localtime
 
-from models import db, ArbitrageOpportunity, Team, League, Bookie, User
+from models import db, ArbitrageOpportunity, Team, League, Bookkeeper, User
 
 # Date located in <p> tag with class name OddsTable_timeText__lFfv_
 # Minus odds indicate a favorite, while plus odds indicate an underdog.
@@ -145,30 +145,30 @@ def odds_from_moneyline(moneyline):
 		return '-'
 
 # Efficiently organize all information about each game in a list of dictionaries
-def create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list):
+def create_games_dict_list(game_times_list, date, teams_list, Bookkeepers_list, odds_numbers_list):
 	game_dict_list = []
-	num_bookies = len(bookies_list)
+	num_Bookkeepers = len(Bookkeepers_list)
 	for i in range(0, len(game_times_list)):
 		game_dict = {
 			'game_date': date[:-1] if not type(date[-1]) == int else date,
 			'game_time': game_times_list[i],
 			'team_1': teams_list[2 * i],
-			'team_1_odds': {bookies_list[j]:odds_numbers_list[2 * (num_bookies * i + j)] for j in range(0, num_bookies)},
+			'team_1_odds': {Bookkeepers_list[j]:odds_numbers_list[2 * (num_Bookkeepers * i + j)] for j in range(0, num_Bookkeepers)},
 			'team_2': teams_list[2 * i + 1],
-			'team_2_odds': {bookies_list[j]:odds_numbers_list[2 * (num_bookies * i + j) + 1] for j in range(0, num_bookies)}
+			'team_2_odds': {Bookkeepers_list[j]:odds_numbers_list[2 * (num_Bookkeepers * i + j) + 1] for j in range(0, num_Bookkeepers)}
 		}
 		game_dict_list.append(game_dict)
 	return game_dict_list
 
-# For each game in the dictionary we test for arbitrage opportunities using all the bookies for each team
-def create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name):
+# For each game in the dictionary we test for arbitrage opportunities using all the Bookkeepers for each team
+def create_arbitrage_opportunities_list(game_dict_list, Bookkeepers_list, league_name):
 	arbitrage_opportunity_list = []
 	for game in game_dict_list:
-		for i in range(0, len(bookies_list)):
-			for j in range(0, len(bookies_list)):
-				if i != j and game['team_1_odds'][bookies_list[i]] != '-' and game['team_2_odds'][bookies_list[j]] != '-':
-					decimal_1 = 1/odds_from_moneyline(game['team_1_odds'][bookies_list[i]])
-					decimal_2 = 1/odds_from_moneyline(game['team_2_odds'][bookies_list[j]])
+		for i in range(0, len(Bookkeepers_list)):
+			for j in range(0, len(Bookkeepers_list)):
+				if i != j and game['team_1_odds'][Bookkeepers_list[i]] != '-' and game['team_2_odds'][Bookkeepers_list[j]] != '-':
+					decimal_1 = 1/odds_from_moneyline(game['team_1_odds'][Bookkeepers_list[i]])
+					decimal_2 = 1/odds_from_moneyline(game['team_2_odds'][Bookkeepers_list[j]])
 					arb_decimal = decimal_1 + decimal_2
 					if arb_decimal < 1:
 						arbitrage_opportunity = {
@@ -178,14 +178,14 @@ def create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_nam
 							'game_date': game['game_date'],
 							'game_time': game['game_time'],
 							'profit_percent': 1 / arb_decimal,
-							'bookie_1': bookies_list[i],
+							'Bookkeeper_1': Bookkeepers_list[i],
 							'decimal_1': 1/decimal_1,
-							'moneyline_1': game['team_1_odds'][bookies_list[i]],
+							'moneyline_1': game['team_1_odds'][Bookkeepers_list[i]],
 							'stake_1_percent': decimal_1 / arb_decimal,
 							'team_1': game['team_1'],
-							'bookie_2': bookies_list[j],
+							'Bookkeeper_2': Bookkeepers_list[j],
 							'decimal_2': 1/decimal_2,
-							'moneyline_2': game['team_2_odds'][bookies_list[j]],
+							'moneyline_2': game['team_2_odds'][Bookkeepers_list[j]],
 							'stake_2_percent': decimal_2 / arb_decimal,
 							'team_2': game['team_2'],
 							'league_name': league_name
@@ -202,15 +202,15 @@ def add_arbitrages(arb_list, team_names_dict):
 				league = League(name=arb['league_name'])
 				db.session.add(league)
 
-			bookie_1 = Bookie.query.filter(Bookie.name == arb['bookie_1']).first()
-			if not bookie_1:
-				bookie_1 = Bookie(name=arb['bookie_1'])
-				db.session.add(bookie_1)
+			Bookkeeper_1 = Bookkeeper.query.filter(Bookkeeper.name == arb['Bookkeeper_1']).first()
+			if not Bookkeeper_1:
+				Bookkeeper_1 = Bookkeeper(name=arb['Bookkeeper_1'])
+				db.session.add(Bookkeeper_1)
 
-			bookie_2 = Bookie.query.filter(Bookie.name == arb['bookie_2']).first()
-			if not bookie_2:
-				bookie_2 = Bookie(name=arb['bookie_2'])
-				db.session.add(bookie_2)
+			Bookkeeper_2 = Bookkeeper.query.filter(Bookkeeper.name == arb['Bookkeeper_2']).first()
+			if not Bookkeeper_2:
+				Bookkeeper_2 = Bookkeeper(name=arb['Bookkeeper_2'])
+				db.session.add(Bookkeeper_2)
 
 			team_1 = Team.query.filter(Team.name == (arb['team_1'] if arb['league_name'] == 'ncaab' else team_names_dict[arb['team_1']])).first()
 			if not team_1:
@@ -238,15 +238,15 @@ def add_arbitrages(arb_list, team_names_dict):
 				moneyline_2=arb['moneyline_2'],
 				team_1_id=team_1.id,
 				team_2_id=team_2.id,
-				bookie_1_id=bookie_1.id,
-				bookie_2_id=bookie_2.id,
+				Bookkeeper_1_id=Bookkeeper_1.id,
+				Bookkeeper_2_id=Bookkeeper_2.id,
 				league_id=league.id
 			).first()
 
 			if not exists:
 				opportunity = ArbitrageOpportunity(
-					bookie_1_id=bookie_1.id,
-					bookie_2_id=bookie_2.id,
+					Bookkeeper_1_id=Bookkeeper_1.id,
+					Bookkeeper_2_id=Bookkeeper_2.id,
 					team_1_id=team_1.id,
 					team_2_id=team_2.id,
 					league_id=league.id,
@@ -278,7 +278,7 @@ def calculate_variance(opportunities):
     return np.var(profit_percentage)
 
 def update_avg_profit_and_variance(league_name):
-    # Calculate and update average profit percent for all leagues, teams, and bookies
+    # Calculate and update average profit percent for all leagues, teams, and Bookkeepers
 	league = League.query.filter(League.name == league_name).first()
 	if league:
 		league_arbs = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.league_id == league.id).all()
@@ -296,15 +296,15 @@ def update_avg_profit_and_variance(league_name):
 				team.avg_profit_percent = calculate_avg_profit(team_arbs)
 				team.var_profit_percent = calculate_variance(team_arbs)
 
-	bookies = Bookie.query.all()
-	if bookies:
-		for bookie in bookies:
-			bookie_arbs_1 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.bookie_1_id == bookie.id).all()
-			bookie_arbs_2 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.bookie_2_id == bookie.id).all()
-			bookie_arbs = [*bookie_arbs_1, *bookie_arbs_2]
-			if bookie_arbs:
-				bookie.avg_profit_percent = calculate_avg_profit(bookie_arbs)
-				bookie.var_profit_percent = calculate_variance(bookie_arbs)
+	Bookkeepers = Bookkeeper.query.all()
+	if Bookkeepers:
+		for Bookkeeper in Bookkeepers:
+			Bookkeeper_arbs_1 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.Bookkeeper_1_id == Bookkeeper.id).all()
+			Bookkeeper_arbs_2 = ArbitrageOpportunity.query.filter(ArbitrageOpportunity.Bookkeeper_2_id == Bookkeeper.id).all()
+			Bookkeeper_arbs = [*Bookkeeper_arbs_1, *Bookkeeper_arbs_2]
+			if Bookkeeper_arbs:
+				Bookkeeper.avg_profit_percent = calculate_avg_profit(Bookkeeper_arbs)
+				Bookkeeper.var_profit_percent = calculate_variance(Bookkeeper_arbs)
 
 	db.session.commit()
 
@@ -317,10 +317,10 @@ def get_sport_data(url, teams_selector, league_name, team_names_dict={}):
 	game_times_list = [obj.contents[0].get_text() for obj in soup.find_all('div', class_='GameRows_timeContainer__27ifL')]
 	teams_list = [teams_selector(obj) for obj in soup.find_all('div', class_='GameRows_participantContainer__6Rpfq')]
 	odds_numbers_list = [obj.contents[1].get_text() for obj in soup.find_all('span', class_='OddsCells_pointer___xLMm')]
-	bookies_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
+	Bookkeepers_list = [obj.contents[0].attrs['href'].split('/')[-1].split('_')[0] for obj in soup.find_all('div', class_='Sportsbooks_sportbook__FqMkt')]
 
-	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, bookies_list, odds_numbers_list)
-	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, bookies_list, league_name=league_name)
+	game_dict_list = create_games_dict_list(game_times_list, date, teams_list, Bookkeepers_list, odds_numbers_list)
+	arbitrage_opportunity_list = create_arbitrage_opportunities_list(game_dict_list, Bookkeepers_list, league_name=league_name)
 	add_arbitrages(arb_list=arbitrage_opportunity_list, team_names_dict=team_names_dict)
 
 	if len(arbitrage_opportunity_list) > 0:

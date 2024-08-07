@@ -6,6 +6,9 @@ import reportWebVitals from './reportWebVitals';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import Nba from './Nba';
+import Nhl from './Nhl';
+import Mlb from './Mlb';
+import Ncaab from './Ncaab';
 import HomePage from './HomePage';
 import ErrorPage from './ErrorPage';
 
@@ -23,7 +26,19 @@ const router = createBrowserRouter([
       {
         path: "nba",
         element: <Nba />
-      }
+      },
+      {
+        path: "nhl",
+        element: <Nhl />
+      },
+      {
+        path: "mlb",
+        element: <Mlb />
+      },
+      {
+        path: "ncaab",
+        element: <Ncaab />
+      },
     ]
   }
 ])
