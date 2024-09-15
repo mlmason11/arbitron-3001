@@ -123,6 +123,10 @@ MLB_TEAMS = {
     'WAS': 'Nationals'
 }
 
+# Helper function for pagination
+def paginate(query, page, per_page=10):
+    return query.paginate(page, per_page, False)
+
 def clean_ncaab_team_name(s):
     # Pattern explanation:
     # ^\(\d+\)\s* matches a string that starts with an opening parenthesis,
