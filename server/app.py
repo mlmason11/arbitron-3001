@@ -250,8 +250,12 @@ def check_session():
 @app.route('/nba')
 def nba():
     try:
-        url = 'https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line/full-game/'
-        game_data = get_sport_data(url, lambda obj: obj.get_text(), league_name='nba', team_names_dict=NBA_TEAMS)
+        game_data = get_sport_data(
+            'https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line/full-game/',
+            lambda obj: obj.get_text(),
+            league_name='nba',
+            team_names_dict=NBA_TEAMS
+		)
         return make_response(jsonify(game_data), 200)
     except Exception as e:
         return make_response(jsonify({'error': str(e)}), 500)
@@ -259,8 +263,12 @@ def nba():
 @app.route('/nhl')
 def nhl():
     try:
-        url = 'https://www.sportsbookreview.com/betting-odds/nhl-hockey/'
-        game_data = get_sport_data(url, lambda obj: obj.contents[1].contents[0].get_text(), league_name='nhl', team_names_dict=NHL_TEAMS)
+        game_data = get_sport_data(
+            'https://www.sportsbookreview.com/betting-odds/nhl-hockey/',
+            lambda obj: obj.contents[1].contents[0].get_text(),
+            league_name='nhl',
+            team_names_dict=NHL_TEAMS
+		)
         return make_response(jsonify(game_data), 200)
     except Exception as e:
         return make_response(jsonify({'error': str(e)}), 500)
@@ -268,8 +276,11 @@ def nhl():
 @app.route('/ncaab')
 def ncaab():
     try:
-        url = 'https://www.sportsbookreview.com/betting-odds/ncaa-basketball/money-line/full-game/'
-        game_data = get_sport_data(url, lambda obj: clean_ncaab_team_name(obj.contents[1].contents[0].get_text()), league_name='ncaab')
+        game_data = get_sport_data(
+            'https://www.sportsbookreview.com/betting-odds/ncaa-basketball/money-line/full-game/',
+            lambda obj: clean_ncaab_team_name(obj.contents[1].contents[0].get_text()),
+            league_name='ncaab'
+		)
         return make_response(jsonify(game_data), 200)
     except Exception as e:
         return make_response(jsonify({'error': str(e)}), 500)
@@ -277,8 +288,12 @@ def ncaab():
 @app.route('/mlb')
 def mlb():
     try:
-        url = 'https://www.sportsbookreview.com/betting-odds/mlb-baseball/'
-        game_data = get_sport_data(url, lambda obj: obj.contents[1].contents[0].get_text(), league_name='mlb', team_names_dict=MLB_TEAMS)
+        game_data = get_sport_data(
+            'https://www.sportsbookreview.com/betting-odds/mlb-baseball/',
+            lambda obj: obj.contents[1].contents[0].get_text(),
+            league_name='mlb',
+            team_names_dict=MLB_TEAMS
+		)
         return make_response(jsonify(game_data), 200)
     except Exception as e:
         return make_response(jsonify({'error': str(e)}), 500)

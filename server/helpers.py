@@ -252,7 +252,7 @@ def update_avg_profit_and_variance(league_name):
         if league_arbs:
             league.avg_profit_percent = calculate_avg_profit(league_arbs)
             league.var_profit_percent = calculate_variance(league_arbs)
-    
+
     teams = Team.query.filter_by(league_id=league.id).all()
     for team in teams:
         team_arbs = ArbitrageOpportunity.query.filter(
@@ -262,7 +262,7 @@ def update_avg_profit_and_variance(league_name):
         if team_arbs:
             team.avg_profit_percent = calculate_avg_profit(team_arbs)
             team.var_profit_percent = calculate_variance(team_arbs)
-    
+
     Bookkeepers = Bookkeeper.query.all()
     for bk in Bookkeepers:
         bk_arbs = ArbitrageOpportunity.query.filter(
