@@ -1,12 +1,10 @@
-import requests
-from bs4 import BeautifulSoup as BS
 from flask import Flask, jsonify, request, session, make_response
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from sqlalchemy.exc import SQLAlchemyError
 from models import db, ArbitrageOpportunity, Bet, User, Team, League, Bookkeeper
-from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, add_arbitrages, paginate, clean_ncaab_team_name, create_games_dict_list, create_arbitrage_opportunities_list, update_avg_profit_and_variance, get_sport_data
+from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, paginate, clean_ncaab_team_name, get_sport_data
 
 app = Flask(__name__)
 app.secret_key = b'Y\xf1Xz\x00\xad|eQ\x80t \xca\x1a\x10K'
