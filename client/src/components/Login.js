@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useLocation } from 'react-router-dom';
 
 const Login = ({ setCurrentUser }) => {
 	const location = useLocation();
