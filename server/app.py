@@ -216,19 +216,12 @@ def create_user():
     except SQLAlchemyError as e:
         return make_response(jsonify({'error': str(e)}), 406)
 
-@app.post('/login')
-def login():
-    """Logs in an existing user."""
-    try:
-        data = request.json
-        user = User.query.filter_by(username=data['username']).first()
-        if user and bcrypt.check_password_hash(user.password, data['password']):
-            session['user_id'] = user.id
-            return make_response(jsonify(user.to_dict()), 202)
-        else:
-            return make_response(jsonify({'error': "Invalid credentials"}), 401)
-    except SQLAlchemyError as e:
-        return make_response(jsonify({'error': str(e)}), 500)
+@app.delete('/logout')
+def logout():
+    """Logs out the current user."""
+    session.pop('user_id', None)
+    return make_response(jsonify({}), 204)
+
 
 @app.delete('/logout')
 def logout():
