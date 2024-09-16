@@ -1,7 +1,5 @@
 import atexit
-
 from apscheduler.schedulers.background import BackgroundScheduler
-
 from flask import Flask, jsonify, request, session, make_response
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
