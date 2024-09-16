@@ -222,13 +222,6 @@ def logout():
     session.pop('user_id', None)
     return make_response(jsonify({}), 204)
 
-
-@app.delete('/logout')
-def logout():
-    """Logs out the current user."""
-    session.pop('user_id', None)
-    return make_response(jsonify({}), 204)
-
 @app.get('/check_session')
 def check_session():
     """Checks if the user is logged in."""
