@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLoaderData, useSearchParams } from 'react-router-dom';
-import SearchFilter from './SearchFilter';
-import Pagination from './Pagination';
+import SearchFilter from '../SearchFilter';
+import Pagination from '../Pagination';
 
 const BookkeeperList = () => {
   const { bookkeepers, totalPages } = useLoaderData();  // Use loader data
