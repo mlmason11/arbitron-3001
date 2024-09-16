@@ -1,21 +1,53 @@
+import atexit
+
+from apscheduler.schedulers.background import BackgroundScheduler
+
 from flask import Flask, jsonify, request, session, make_response
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from sqlalchemy.exc import SQLAlchemyError
-from models import db, ArbitrageOpportunity, Bet, User, Team, League, Bookkeeper
+
 from helpers import NBA_TEAMS, NHL_TEAMS, MLB_TEAMS, paginate, clean_ncaab_team_name, get_sport_data
+from models import db, ArbitrageOpportunity, Bet, User, Team, League, Bookkeeper
+from seed import seed_database
 
-app = Flask(__name__)
-app.secret_key = b'Y\xf1Xz\x00\xad|eQ\x80t \xca\x1a\x10K'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.json.compact = False
+# Define Bcrypt and Migrate globally
+bcrypt = Bcrypt()  # Instantiate, but not tied to any app yet
+migrate = Migrate()  # Instantiate, but not tied to any app yet
 
-migrate = Migrate(app, db)
-db.init_app(app)
-CORS(app)
-bcrypt = Bcrypt(app)
+def create_app():
+    """Factory function to create and configure the Flask app."""
+    # Initialize the Flask app
+    app = Flask(__name__)
+
+    # Set secret key and configurations
+    app.secret_key = b'Y\xf1Xz\x00\xad|eQ\x80t \xca\x1a\x10K'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.json.compact = False
+
+    # Initialize extensions
+    db.init_app(app)
+    migrate.init_app(app, db)  # Database migration
+    CORS(app)  # Enable CORS
+    bcrypt.init_app(app)  # Password hashing with Bcrypt
+
+    # Set up the scheduler for running periodic tasks (like seeding the database)
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=seed_database, trigger="interval", hours=1)  # Run every hour
+    scheduler.start()
+
+    # Ensure the scheduler shuts down when the app stops
+    atexit.register(lambda: scheduler.shutdown())
+
+    # Flask app context (e.g., creating database tables on app start)
+    with app.app_context():
+        db.create_all()
+
+    return app
+
+app = create_app()
 
 @app.route('/')
 def index():

@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+apscheduler = "*"
 bs4 = "*"
 crontab = "*"
 datetime = "*"
@@ -14,12 +15,8 @@ flask-sqlalchemy = "*"
 ipdb = "*"
 numpy = "*"
 pytest = "*"
-re = "*"
 requests = "*"
-seleneum = "*"
 sqlalchemy-serializer = "*"
-time = "*"
-
 
 [dev-packages]
 
